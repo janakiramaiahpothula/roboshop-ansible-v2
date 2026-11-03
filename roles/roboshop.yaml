@@ -33,34 +33,34 @@
     sg_rules:
     - name: common
       rules:
-        - porto: tcp
+        - proto: tcp
           ports: [22]
           cidr_ip: "{{ ssh_source_ip }}"
     
     - name: frontend
       rules:
-        - porto: tcp
+        - proto: tcp
           ports: [80, 443]
           cidr_ip: 0.0.0.0/0
 
     - name: monogodb
       rules:
-        - porto: tcp
+        - proto: tcp
           ports: [27017]
           group_name: roboshop-common
 
     - name: rabbitmq
       rules:
-        - porto: tcp
+        - proto: tcp
           ports: [5672]
           group_name: roboshop-common
-        -  porto: tcp
+        -  proto: tcp
            ports: [15672]
            cidr_ip: "{{ ssh_source_ip }}"
 
     - name: redis 
       rules: 
-        - porto: tcp
+        - proto: tcp
           ports: [6379]
           cidr_ip: "{{ ssh_source_ip }}"
 
