@@ -72,7 +72,7 @@
         name: "roboshop-{{ item }}"
         region: "{{ aws_region }}"
         state: present
-        description: "RoboShop {{ item.name }}"
+        description: "RoboShop {{ item }} security group"
       loop: "{{ security_groups }}"     
       when: action == "create"
     
