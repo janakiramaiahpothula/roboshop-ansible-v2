@@ -33,11 +33,11 @@
     sg_rules:
     - name: common
       rules:
-        - port0: tcp
+        - porto: tcp
           ports: [22]
           cidr_ip: "{{ ssh_source_ip }}"
     
-    - nmae: frontend
+    - name: frontend
       rules:
         - porto: tcp
           ports: [80, 443]
