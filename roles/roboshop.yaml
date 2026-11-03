@@ -68,7 +68,7 @@
   tasks:
 
     - name: Create Security Groups
-      amzon.aws.ec2_security_group:
+      amazon.aws.ec2_security_group:
         name: "roboshop-{{ item }}"
         region: "{{ aws_region }}"
         state: present
