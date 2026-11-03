@@ -1,0 +1,156 @@
+---
+
+- name: Create Ec2 Instance And Route53
+  hosts: local
+  connection: local
+  vars:
+    action: create
+    aws_region: us-east-1
+    domain_name: classpractice.online
+    ami_id: ami-0055977a6e828a4f4
+    ssh_source_ip: "223.228.102.235/32"
+    type: t3.micro
+
+    instances:
+    - mondodb
+    - redis
+    - rabbitmq
+    - mysql
+    - catalogue
+    - cart
+    - user
+    - shipping
+    - payment
+
+    security_groups:
+    - common
+    - mongodb
+    - redis
+    - rabbitmq
+    - catalogue
+    - cart
+
+    sg_rules:
+    - name: common
+      rules:
+        - port0: tcp
+          ports: [22]
+          cidr_ip: "{{ ssh_source_ip }}"
+    
+    - nmae: frontend
+      rules:
+        - porto: tcp
+          ports: [80, 443]
+          cidr_ip: 0.0.0.0/0
+
+    - name: monogodb
+      rules:
+        - porto: tcp
+          ports: [27017]
+          group_name: roboshop-common
+
+    - name: rabbitmq
+      rules:
+        - porto: tcp
+          ports: [5672]
+          group_name: roboshop-common
+        -  porto: tcp
+           ports: [15672]
+           cidr_ip: "{{ ssh_source_ip }}"
+
+    - name: redis 
+      rules: 
+        - porto: tcp
+          ports: [6379]
+          cidr_ip: "{{ ssh_source_ip }}"
+
+
+  tasks:
+
+    - name: Create Security Groups
+      amzon.aws.ec2_security_group:
+        name: "roboshop-{{ item }}"
+        region: "{{ aws_region }}"
+        state: present
+      loop: "{{ security_groups }}"     
+      when: action == "create"
+    
+    - name: Configure Security Groups Rules
+      amazon.aws.ec2_security_group:
+        name: "roboshop-{{ item.name }}"
+        region: "{{ aws_region }}"
+        state: present
+        rules: "{{ item.rules }}"
+      loop: "{{ sg_rules }}"
+      when: action == "create"
+
+    - name: Create EC2 Instances
+      amazon.aws.ec2_instance:
+       - name: "roboshop-{{ item }}"
+         image_id: "{{ ami_id }}"
+         instance_type: "{{ type }}"
+         region: "{{ aws_region }}"
+         security_groups:
+       - roboshop-common
+       - "roboshop-{{ item }}"
+      state: present
+      loop: "{{ instances }}"
+      register: ec2_output
+      when: action == "create"
+
+    - name: Create backend DNS Records
+      amazon.aws.route53:
+        zone: "{{ domain_name }}"
+        state: present
+        record: "{{ item.item }}.{{ domain_name }}"
+        type: A
+        ttl: 1
+        value: "{{item.instances[0]. private_ip_address }}"
+        overwrite: true
+      loop: "{{ ec2_output.result | default([]) }}"
+      when: action == "create"
+
+    - name: Create Frontend DNS records
+      amazon.aws.route53:
+        state: present
+        zone: "{{ domain_name }}"
+        record: "{{ domain_name }}"
+        type: A
+        ttl: 1
+        value: "{{item.instances.public_ip_address}}"
+        overwrite: true
+      loop: "{{ ec2_output.result | default({}) }}"
+      when:
+       - action == "create"
+         item.item == "frontend"
+
+    - name: Delete DNS records
+      amazon.aws.route53:
+        state: present
+        zone: "{{ domain_name }}"
+        record: "{{ item }}.{{ domain_name }}"
+        type: A
+      loop: "{{ inatances + [domain_name] }}"
+      when: action == "delete"
+
+    - name: Delete Ec2 instances
+      amazon.aws.ec2_instance:
+        state: absent
+        name: "roboshop-{{ item }}"
+        whait: fales
+        region: "{{ aws_region }}"
+      loop: "{{ inastances }}"
+      when: action == delete 
+    
+    - name: Delete Security groups
+      amazon.aws.ec2_security_group:
+        name: "roboshop-{{ item }}"
+        state: absent
+        region: "{{ aws_region }}"
+      loop: "{{ security_group | revers | list }}"
+      when : action == "delete" 
+      
+
+  
+  
+
