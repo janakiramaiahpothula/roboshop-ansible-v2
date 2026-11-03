@@ -85,6 +85,16 @@
       loop: "{{ sg_rules }}"
       when: action == "create"
 
+
+    # - name: Create EC2 instances
+    #   amazon.aws.ec2_instance:
+    #    name: "roboshop-{{ item }}"
+    #    instance_type: t3.micro
+    #    image_id: "{{ ami_id }}"
+    #    region: "{{ aws_region }}"
+    #   loop: "{{ instances }}"
+    #   when: action == "create" 
+
     - name: Create EC2 Instances
       amazon.aws.ec2_instance:
          name: "roboshop-{{ item }}"
@@ -95,6 +105,7 @@
          - roboshop-common
          - "roboshop-{{ item }}"
          state: present
+         wait: true
       loop: "{{ instances }}"
       register: ec2_output
       when: action == "create"
@@ -123,7 +134,7 @@
       loop: "{{ ec2_output.result | default({}) }}"
       when:
        - action == "create"
-         item.item == "frontend"
+       - item.item == "frontend"
 
     - name: Delete DNS records
       amazon.aws.route53:
